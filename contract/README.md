@@ -64,3 +64,16 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+```shell
+# To load the variables in the .env file
+source .env
+
+forge script script/DAO.s.sol:DAOScript --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast
+```
+
+
+
+##### sepolia
+✅  [Success]Hash: 0x47b6799078cb705f227201952239e338eb14a74310bc42713554aa47881bb652
+Contract Address: 0xA6E782af1b182329282CC67f1ce0f4680030E12F

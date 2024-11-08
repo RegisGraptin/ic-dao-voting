@@ -13,12 +13,12 @@ contract DAO is ERC20, ERC20Permit {
         uint256 amount;
     }
 
-    uint256 proposalIds;
+    uint256 public proposalIds;
 
     event CreateBTCProposalEvent(uint256 proposalId);
     event AcceptedBTCProposalEvent(uint256 proposalId, string btcAddress, uint256 amount);
 
-    mapping(uint256 => BTCProposal) proposals;
+    mapping(uint256 => BTCProposal) public proposals;
     
     // Add the moment, we collect only yes vote. The no are just not collected
     // We need to take this modification into account on prod
@@ -61,7 +61,6 @@ contract DAO is ERC20, ERC20Permit {
                 proposals[proposalId].amount
             );
         }
-
     }
 
 }
