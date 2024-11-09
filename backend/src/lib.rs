@@ -26,6 +26,13 @@ fn get_rpc_service_sepolia() -> RpcService {
     })
 }
 
+fn get_rpc_service_optimism_sepolia() -> RpcService {
+    RpcService::Custom(RpcApi {
+        url: "https://sepolia.optimism.io".to_string(),
+        headers: None,
+    })
+}
+
 fn get_rpc_service_base() -> RpcService {
     // Uncomment to use EVM RPC Canister instead of RPC proxy
     // RpcService::BaseMainnet(L2MainnetService::Alchemy)

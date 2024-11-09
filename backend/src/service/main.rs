@@ -1,6 +1,6 @@
-use std::{cell::RefCell, time::Duration};
+use std::{cell::RefCell, str::FromStr, time::Duration};
 
-use crate::{create_icp_signer, get_rpc_service_base, get_rpc_service_sepolia};
+use crate::{create_icp_signer, get_rpc_service_base, get_rpc_service_optimism_sepolia, get_rpc_service_sepolia};
 
 use alloy::{
     network::EthereumWallet,
@@ -21,6 +21,8 @@ const POLL_LIMIT: usize = 3;
 thread_local! {
     static NONCE: RefCell<Option<u64>> = const { RefCell::new(None) };
 }
+
+const OPTIMISM_CHAIN_ID: u64 = 11155420;
 
 struct State {
     timer_id: Option<TimerId>,
@@ -57,6 +59,83 @@ sol!(
     "src/abi/DAO.json"
 );
 
+sol!(
+    #[allow(missing_docs, clippy::too_many_arguments)]
+    #[sol(rpc)]
+    USDC,
+    "src/abi/USDC.json"
+);
+
+
+async fn send_tranfer_on_other_chain(
+    target_address: Address,
+    amount: U256
+) -> Result<String, String> {
+    
+    // Setup signer
+    let signer = create_icp_signer().await;
+    let address = signer.address();
+
+    // Setup provider
+    let wallet = EthereumWallet::from(signer);
+    let rpc_service = get_rpc_service_optimism_sepolia();
+    let config = IcpConfig::new(rpc_service);
+    let provider = ProviderBuilder::new()
+        .with_gas_estimation()
+        .wallet(wallet)
+        .on_icp(config);
+
+    // Attempt to get nonce from thread-local storage
+    let maybe_nonce = NONCE.with_borrow(|maybe_nonce| {
+        // If a nonce exists, the next nonce to use is latest nonce + 1
+        maybe_nonce.map(|nonce| nonce + 1)
+    });
+
+    // If no nonce exists, get it from the provider
+    let nonce = if let Some(nonce) = maybe_nonce {
+        nonce
+    } else {
+        provider.get_transaction_count(address).await.unwrap_or(0)
+    };
+
+    // Mint a new NFT
+    let contract = USDC::new(
+        address!("63A0bfd6a5cdCF446ae12135E2CD86b908659568"),
+        provider.clone(),
+    );
+
+    match contract
+        .transfer(target_address, amount)
+        .nonce(nonce)
+        .chain_id(OPTIMISM_CHAIN_ID)
+        .from(address)
+        .send()
+        .await
+    {
+        Ok(builder) => {
+            let node_hash = *builder.tx_hash();
+            let tx_response = provider.get_transaction_by_hash(node_hash).await.unwrap();
+
+            match tx_response {
+                Some(tx) => {
+                    // The transaction has been mined and included in a block, the nonce
+                    // has been consumed. Save it to thread-local storage. Next transaction
+                    // for this address will use a nonce that is = this nonce + 1
+                    NONCE.with_borrow_mut(|nonce| {
+                        *nonce = Some(tx.nonce);
+                    });
+                    Ok(format!("{:?}", tx))
+                }
+                None => Err("Could not get transaction.".to_string()),
+            }
+        }
+        Err(e) => Err(format!("{:?}", e)),
+    }
+
+}
+
+
+
 
 /// Watch for BTC proposal accepted
 #[ic_cdk::update]
@@ -80,12 +159,12 @@ async fn watch_btc_event_transfer_start() -> Result<String, String> {
                 let proposal: Log<DAO::AcceptedBTCProposalEvent> = log.log_decode().unwrap();
                 let DAO::AcceptedBTCProposalEvent { proposalId, btcAddress, amount } = proposal.data();
                 
-                // Execute the tx on BTC side
-                // TODO::
+                // Execute the tx on Optimisme side
+                // FIXME: Suppose to be BTC, but not BTC wallet implementation yet
+                send_tranfer_on_other_chain(Address::from_str(btcAddress).unwrap(), *amount);
 
                 // FIXME:: If we need to sign and send a tx on BTC, the function might be async, leading
                 // to a potential issue for the callbacke function...
-
             }
 
             state.poll_count += 1;
