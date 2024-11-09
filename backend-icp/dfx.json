@@ -1,0 +1,10 @@
+{
+    "canisters": {
+        "backend-icp": {
+            "type": "rust",
+            "main": "src/main.rs",
+            "candid": "src/backend-icp.did",
+            "package": "backend-icp"
+        }
+    }
+}

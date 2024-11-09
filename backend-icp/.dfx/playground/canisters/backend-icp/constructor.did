@@ -1,0 +1,16 @@
+
+type State = record {
+  timer_id: nat;      // Option<TimerId> is equivalent to ?TimerId in Motoko.
+  logs: vec text;            // Vec<String> translates to [Text] in Motoko.
+  poll_count: nat;         // usize is generally represented by Nat in Motoko.
+};
+
+type Result = variant { Ok : text; Err : text };
+
+service : {
+  "watch_btc_event_transfer_start": () -> (Result);
+  "watch_btc_proposal_event_stop": () -> (Result);
+  "watch_btc_proposal_event_is_polling": () -> (Result);
+  "watch_btc_proposal_event_poll_count": () -> (Result);
+  "watch_btc_proposal_event_get": () -> (Result);
+};
