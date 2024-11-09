@@ -10,6 +10,12 @@ In our initial approach, we wanted to add the possibility for a DAO on ethereum 
 
 In the meantime, we have an ICP services that montoring the logs from etherem. Once a log is detected from the given DAO, it will generate and execute a transfer of USDC on Optimism layer with the parameters defined in the event. Here we are limiting our approach to a USDC transfer, but this can be extend to other actions as voting on proposal on another chain, sending funds to another chain, extend the dapp...
 
+## Project structure
+
+- `backend-icp`: It is where we have defined the ICP listener to our DAO events on ethereum and execute it on optimism layer when an event occured.
+- `contract`: DAO contract deployed on sepolia.
+- `front`: DAO dashboard where user can create proposal for transfering USDC.
+
 
 ## Links
 
